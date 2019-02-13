@@ -19,6 +19,9 @@
         "commands": [{
                 "command": "extension.sayHello",
                 "title": "Hello World"
+        },{
+            "command": "editor.previewGtt",
+            "title": "GTT Preview"
         }],
 
         "languages": [{

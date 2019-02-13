@@ -2,7 +2,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { setupMaster } from 'cluster';
+import { workspace, languages, window, commands, ExtensionContext, Disposable } from 'vscode';
+//import ContentProvider, { encodeLocation } from './provider';
 
 
 class GTTFormattingProvider implements vscode.DocumentFormattingEditProvider {
@@ -53,22 +54,84 @@ function repeatText(text: string, num: number): string {
     return result;
 }
 
+//region
+import { spawn, fork, spawnSync } from "child_process";
+
+class GTTContentProvider
+    implements vscode.TextDocumentContentProvider {
+    static scheme = 'gtt-html';
+    private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
+    private _documents = new Map<string, string>();
+    private _subscriptions: vscode.Disposable;
+
+
+    constructor() {
+        //listener for cleaning up on document close
+        this._subscriptions =
+            vscode.workspace.onDidCloseTextDocument(doc => this._documents.delete(doc.uri.toString()));
+    }
+
+    get onDidChange() {
+        return this._onDidChange.event;
+    }
+    provideTextDocumentContent(uri: vscode.Uri, token: vscode.CancellationToken): string {
+        let document = this._documents.get(uri.toString());
+        if (document) { }
+
+        console.log("/home/weigl/work/verifaps-lib/casestudies/build/install/casestudies/bin/ttprint",
+            ["--format", "html", uri.fsPath], { 'cwd': '.' });
+
+        let process = spawnSync("/home/weigl/work/verifaps-lib/casestudies/build/install/casestudies/bin/ttprint",
+            ["--format", "html", uri.fsPath], { 'cwd': '.' });
+
+        let content = process.stdout+"";
+        return content;
+    }
+}
+
+export function encodeLocation(uri: vscode.Uri, pos: vscode.Position): vscode.Uri {
+    const query = JSON.stringify([uri.toString(), pos.line, pos.character]);
+    return vscode.Uri.parse(`${GTTContentProvider.scheme}://${uri.fsPath}`);
+}
+//endregion
+
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
     console.log('Congratulations, your extension "geteta-vscode" is now active!');
-
     let disposable = vscode.commands.registerCommand('extension.sayHello', () => {
         vscode.window.showInformationMessage('Hello World!');
     });
 
-    vscode.languages.registerDocumentFormattingEditProvider(
-        "gtt", new GTTFormattingProvider())
+    const provider = new GTTContentProvider();
+
+    // register content provider for scheme `references`
+    // register document link provider for scheme `references`
+    const providerRegistrations = Disposable.from(
+        workspace.registerTextDocumentContentProvider(GTTContentProvider.scheme, provider)
+        , vscode.languages.registerDocumentFormattingEditProvider("gtt", new GTTFormattingProvider())
+        , disposable
+        //, languages.registerDocumentLinkProvider({ scheme: GTTContentProvider.scheme }, provider)
+    );
+
+    // register command that crafts an uri with the `references` scheme,
+    // open the dynamic document, and shows it in the next editor
+    const commandRegistration = commands.registerTextEditorCommand('editor.previewGtt', editor => {
+        const uri = encodeLocation(editor.document.uri, editor.selection.active);
+        return workspace.openTextDocument(uri)
+            .then(doc => window.showTextDocument(doc, editor.viewColumn + 1));
+    });
+
+    context.subscriptions.push(
+        //provider,
+        commandRegistration,
+        providerRegistrations
+    );
 
 
     context.subscriptions.push(disposable);
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() { }
