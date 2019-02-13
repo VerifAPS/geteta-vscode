@@ -1,0 +1,48 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Generalized Test Table",
+	"patterns": [
+		{"include": "#keywords"}, 
+		{"include": "#strings"}, 
+		{"include": "#variables"}, 
+		{"include": "#constants"}],
+
+	"repository": {
+		"keywords": {
+			"patterns": [{
+				"name": "keyword.gtt",
+				"match": "\\b(relational|table|options|var|gvar|state|input|output|INT|BOOL|ENUM|group|row|pause|with)\\b"
+			}]
+		},
+		"constants": {
+			"patterns": [
+				{ "name": "keyword.control.gtt",
+				  "match": "\\b(false|true)\\b"},
+				{ "name":"constant.numeric", 
+				  "match": "[0-9]+"},
+				{ "name": "constant.numeric",
+				  "match": "[0-9]?\\.[0-9]+"},
+				{ "name": "constant.numeric",
+				  "match": "\\b-\\b"}
+			]
+		},
+		"variables":{
+			"patterns": [
+				{"name": "variable.name",
+				 "match": "(?<=gvar) ([a-zA-Z][a-zA-Z0-9]+)",
+				 "captures": {"1": {"name":"variable.name"}}
+				}
+			]	
+		},
+		"strings": {
+			"name": "string.quoted.double.gtt",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [{
+				"name": "constant.character.escape.gtt",
+				"match": "\\\\."
+			}]
+		}
+	},
+	"scopeName": "source.gtt"
+}
