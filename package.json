@@ -2,7 +2,7 @@
     "name": "geteta-vscode",
     "displayName": "geteta-vscode",
     "description": "",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "publisher": "wadoon",
     "engines": {
         "vscode": "^1.30.0"
